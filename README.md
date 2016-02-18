@@ -9,7 +9,7 @@ Please, send bug reports and good/bad experiences to robarago@gmail.com.
 
 #References
 
-[RePhone mian Page](http://www.seeed.cc/rephone)
+[RePhone main Page](http://www.seeed.cc/rephone)
 
 [Wiki for Arduino_IDE_for_RePhone](http://www.seeedstudio.com/wiki/Arduino_IDE_for_RePhone_Kit)
 
