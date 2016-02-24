@@ -28,6 +28,10 @@ class MTKModem(object):
 	def __init__(self, port):
 		self.open(port)
 
+	def debug(self, args):
+		print args
+		sys.stdout.flush()
+
 	def open(self, port):
 		self.ser = serial.Serial(port, 115200, timeout=5)
 		self.ser.flushInput()
@@ -35,7 +39,7 @@ class MTKModem(object):
 
 	def SendCommand(self, command, getline=True, ignoreError=False):
 		if self.VERBOSE > 4:
-			print 'send: %s' % (command)
+			self.debug('send: %s' % command)
 		self.ser.write(command + '\r')
 		data = ''
 		if getline:
@@ -45,7 +49,7 @@ class MTKModem(object):
 	def SendCommandResult(self,command):
 		out = []	
 		if self.VERBOSE > 4:
-			print 'send: %s' % (command)
+			self.debug('send: %s' % command)
 		self.ser.write(command + '\r')
 		while 1:
 			data = self.ser.readline().rstrip("\n\r")
@@ -68,7 +72,7 @@ class MTKModem(object):
 				raise Exception('Comm Error')
 				
 			if data !='' and self.VERBOSE > 4:
-				print data
+				self.debug(data)
 
 	def clearSketches(self, path):
 		fileList = self.SendCommandResult('AT+EFSL="'+path.encode("utf-16-be").encode("hex") +'"')
@@ -84,9 +88,9 @@ class MTKModem(object):
 	def ListFiles(self, path):
 		fileList = self.SendCommandResult('AT+EFSL="'+path.encode("utf-16-be").encode("hex") +'"')
 		if self.VERBOSE > 0:
-			print "[ %s ]" % path
-			print "%6.6s %-64.64s" % ("Size", "Filename")
-			print "====== ==============="
+			self.debug("[ %s ]" % path)
+			self.debug("%6.6s %-64.64s" % ("Size", "Filename"))
+			self.debug("====== ===============")
 		for item in fileList:
 			diritem  = item.split(",")
 			# get file size
@@ -98,12 +102,12 @@ class MTKModem(object):
 				# find filename
 				value = value.replace('"', "")
 				if self.VERBOSE > 0:
-					print ("%6.6s %-64.64s" % (str(filesize), value.decode("hex")))
+					self.debug("%6.6s %-64.64s" % (str(filesize), value.decode("hex")))
 
 	def DeleteFile(self, pathFilename):
 		# Folder operation Back to root folder
 		if self.VERBOSE > 0:
-			print "Deleting file '%s'..." % pathFilename
+			self.debug("Deleting file '%s'..." % pathFilename)
 		self.SendCommand('AT+EFSF=3')
 		# send command ignore error if file does not exits
 		self.SendCommand('AT+EFSD="'+pathFilename.encode("utf-16-be").encode("hex") +'"', True, True)
@@ -130,8 +134,8 @@ class MTKModem(object):
 		filenamePath = path.encode("utf-16-be")
 
 		if self.VERBOSE > 0:
-			print "Filename path: %s" % filenamePath
-			print "Bytes to send: %d" % size
+			self.debug("Filename path: %s" % filenamePath)
+			self.debug("Bytes to send: %d" % size)
 
 		# open file for write
 		self.SendCommand('AT+EFSW=0,"'+ filenamePath.encode("hex") +'"')
@@ -173,50 +177,51 @@ def main():
 	if os.path.isfile(args.app) == False:
 		print 'Can not open file "' + args.app + '" for upload. Aborted'
 		return
-	h = MTKModem('/dev/%s' % args.port)
+	# The modem port is the one not used for debugging, so always choose the "other" port
+	h = MTKModem('/dev/%s' % ("ttyACM0" if args.port == "ttyACM1" else "ttyACM1"))
 	time.sleep(0.5)
 	h.VERBOSE = args.verbose
 
 	if h.VERBOSE > 3:
-		print "Opening communication..."
+		h.debug("Opening communication...")
 	h.SendCommand('AT')
 
 	# exit all running process
 	if h.VERBOSE > 3:
-		print "Stopping all processes..."
+		h.debug("Stopping all processes...")
 	h.SendCommand('AT+[666]EXIT_ALL', False)
 	h.flushCom()
 	time.sleep(1)
 
 	if h.VERBOSE > 3:
-		print "Changing operation mode to obtain access to filesystem..."
+		h.debug("Changing operation mode to obtain access to filesystem...")
 	h.SendCommand('AT+ESUO=3')
 		
 	if h.VERBOSE > 3:
-		print "Folder operation back to root folder..."
+		h.debug("Folder operation back to root folder...")
 	h.SendCommand('AT+EFSF=3')
 	
 	if h.VERBOSE > 3:
-		print "Clearing old sketches from MRE folder..."
+		h.debug("Clearing old sketches from MRE folder...")
 	if args.clear:
 		h.clearSketches('C:\MRE')
 
 	if h.VERBOSE > 3:
-		print "Sending new sketch: '%s'..." % os.path.basename(args.app)
+		h.debug("Sending new sketch: '%s'..." % os.path.basename(args.app))
 	h.sendFile('C:\\MRE\\', args.app)
 	h.ListFiles('C:\MRE')
 
 	if h.VERBOSE > 3:
-		print "Sending new 'autoload.txt'..."
+		h.debug("Sending new 'autoload.txt'...")
 	h.sendAutostart(args.app)
 	h.ListFiles('C:')
 		
 	if h.VERBOSE > 3:
-		print "Change operation mode to compatible..."
+		h.debug("Change operation mode to compatible...")
 	h.SendCommand('AT+ESUO=4')
 
 	if h.VERBOSE > 3:
-		print "Rebooting..."
+		h.debug("Rebooting...")
 	h.SendCommand('AT+[666]REBOOT', False) 
 
 if __name__ == '__main__':
