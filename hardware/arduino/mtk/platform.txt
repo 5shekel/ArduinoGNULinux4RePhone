@@ -74,11 +74,11 @@ recipe.size.regex=\.text\s+([0-9]+).*
 # MTK Uploader tools
 # -------------------
 
-tools.bossac.cmd=pushtool.py
+#tools.bossac.cmd=pushtool.py
+tools.bossac.cmd=uploader.py
 tools.bossac.cmd.windows=pushtool.exe
 tools.bossac.path={runtime.ide.path}/hardware/tools/mtk
 
 tools.bossac.upload.params.verbose=-v -v -v -v
 tools.bossac.upload.params.quiet=
-tools.bossac.upload.pattern="{path}/{cmd}" {upload.verbose} -t arduino -clear -port {serial.port.file} -app "{build.path}/{build.project_name}.vxp" 
-
+tools.bossac.upload.pattern="{path}/{cmd}" {upload.verbose} -clear -port {serial.port.file} -app "{build.path}/{build.project_name}.vxp" 
